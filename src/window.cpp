@@ -103,6 +103,10 @@ syshud::syshud(const std::map<std::string, std::map<std::string, std::string>>& 
 		return;
 	}
 
+	if (config_main["main"]["animation-fade"] == "true") {
+		transition_type = Gtk::RevealerTransitionType::CROSSFADE;
+	}
+
 	// Set margins
 	std::istringstream iss(config_main["main"]["margins"]);
 	std::string margin_str;
