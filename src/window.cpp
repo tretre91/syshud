@@ -347,7 +347,7 @@ void syshud::setup_listeners() {
 
 	if (audio_in || audio_out) {
 		#ifdef AUDIO_PULSEAUDIO
-		listener_audio = new syshud_pulseaudio(audio_out);
+		listener_audio = new syshud_pulseaudio(audio_in, audio_out);
 		#else
 		listener_audio = new syshud_wireplumber(audio_in, audio_out);
 		#endif

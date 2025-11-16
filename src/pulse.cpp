@@ -3,8 +3,8 @@
 #include <thread>
 #include <math.h>
 
-syshud_pulseaudio::syshud_pulseaudio(Glib::Dispatcher* output_callback) :
-	output_callback(output_callback) {
+syshud_pulseaudio::syshud_pulseaudio(Glib::Dispatcher* input_callback, Glib::Dispatcher* output_callback) :
+	input_callback(input_callback), output_callback(output_callback) {
 
 	mainloop = pa_mainloop_new();
 	mainloop_api = pa_mainloop_get_api(mainloop);
@@ -62,7 +62,7 @@ void syshud_pulseaudio::context_state_callback(pa_context *c, void *userdata) {
 		case PA_CONTEXT_READY:
 			pa_context_get_server_info(c, server_info_callback, userdata);
 			pa_context_set_subscribe_callback(c, subscribe_callback, userdata);
-			pa_context_subscribe(c, PA_SUBSCRIPTION_MASK_SINK, NULL, NULL);
+			pa_context_subscribe(c, static_cast<pa_subscription_mask_t>(PA_SUBSCRIPTION_MASK_SINK | PA_SUBSCRIPTION_MASK_SOURCE), NULL, NULL);
 			break;
 
 		case PA_CONTEXT_TERMINATED:
@@ -85,6 +85,8 @@ void syshud_pulseaudio::subscribe_callback(pa_context *c, pa_subscription_event_
 
 	if (facility == PA_SUBSCRIPTION_EVENT_SINK)
 		op = pa_context_get_sink_info_by_index(c, idx, sink_info_callback, userdata);
+	else if (facility == PA_SUBSCRIPTION_EVENT_SOURCE)
+		op = pa_context_get_source_info_by_index(c, idx, source_info_callback, userdata);
 
 	if (op)
 		pa_operation_unref(op);
@@ -98,7 +100,28 @@ void syshud_pulseaudio::sink_info_callback(pa_context *c, const pa_sink_info *i,
 	if (!i)
 		return;
 
-	if (strcmp(i->name, pa->output_name))
+	// TODO: see if this is necessary
+	// if (strcmp(i->name, pa->output_name))
+	// 	return;
+
+	// Set new values
+	pa->volume = roundf(((float)pa_cvolume_avg(&(i->volume)) / (float)PA_VOLUME_NORM) * 100.0f);
+	pa->muted = i->mute;
+
+	// Trigger an update if needed
+	if (pa->last_output_name != i->name || pa->volume != pa->previous_volume || pa->muted != pa->previous_muted) {
+		pa->output_callback->emit();
+
+		pa->last_output_name = i->name;
+		pa->previous_volume = pa->volume;
+		pa->previous_muted = pa->muted;
+	}
+}
+
+void syshud_pulseaudio::source_info_callback(pa_context *c, const pa_source_info *i, int eol, void *userdata) {
+	syshud_pulseaudio* pa = (syshud_pulseaudio*)userdata;
+
+	if (!i)
 		return;
 
 	// Set new values
@@ -106,20 +129,16 @@ void syshud_pulseaudio::sink_info_callback(pa_context *c, const pa_sink_info *i,
 	pa->muted = i->mute;
 
 	// Trigger an update if needed
-	if (pa->volume != pa->previous_volume || pa->muted != pa->previous_muted) {
-		pa->output_callback->emit();
+	if (pa->last_input_name != i->name || pa->volume != pa->previous_volume || pa->muted != pa->previous_muted) {
+		pa->input_callback->emit();
 
+		pa->last_input_name = i->name;
 		pa->previous_volume = pa->volume;
 		pa->previous_muted = pa->muted;
 	}
 }
 
 void syshud_pulseaudio::server_info_callback(pa_context *c, const pa_server_info *i, void *userdata) {
-	syshud_pulseaudio* pa = (syshud_pulseaudio*)userdata;
-	pa->output_name = i->default_sink_name;
-	pa->input_name = i->default_source_name;
-	// std::printf("Output: %s\n", i->default_sink_name);
-	// std::printf("Input: %s\n", i->default_source_name);
-	
+	pa_context_get_source_info_by_name(c, i->default_source_name, source_info_callback, userdata);
 	pa_context_get_sink_info_by_name(c, i->default_sink_name, sink_info_callback, userdata);
 }
