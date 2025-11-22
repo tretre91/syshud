@@ -52,8 +52,10 @@ syshud::syshud(const std::map<std::string, std::map<std::string, std::string>>& 
 		box_layout.append(scale_volume);
 
 		// Check to see if the percentage should be shown
+		#ifndef FEATURE_KEYBOARD
 		if (config_main["main"]["show-percentage"] == "true")
-			box_layout.append(label_volume);
+		#endif
+		box_layout.append(label_volume);
 
 		scale_volume.set_hexpand(true);
 		scale_volume.set_value_pos(Gtk::PositionType::RIGHT);
@@ -273,8 +275,12 @@ void syshud::on_change(const char& reason, const int& value) {
 	image_volume.set_from_icon_name(icon);
 	scale_animator.animate_property(&scale_volume,
 		PROPERTY_SCALE_VALUE, value, 0.25);
-	if (config_main["main"]["show-percentage"] == "true")
+	if (reason == 'k' || config_main["main"]["show-percentage"] == "true") {
 		label_volume.set_label(label);
+		label_volume.show();
+	} else {
+		label_volume.hide();
+	}
 }
 
 bool syshud::on_scale_change(const Gtk::ScrollType&, const double& val) {
