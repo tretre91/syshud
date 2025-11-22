@@ -55,17 +55,14 @@ syshud_keytoggles::syshud_keytoggles(Glib::Dispatcher* callback, const std::stri
 				if (ev.type != EV_LED)
 					continue;
 
-				if (ev.code == LED_CAPSL)
+				if (ev.code == LED_CAPSL) {
 					caps_lock = ev.value;
-
-				else if (ev.code == LED_NUML)
-					num_lock = ev.value;
-
-				if (caps_lock != caps_lock_prev)
 					changed = 'c';
-
-				else if (num_lock != num_lock_prev)
+				}
+				else if (ev.code == LED_NUML) {
+					num_lock = ev.value;
 					changed = 'n';
+				}
 
 				caps_lock_prev = caps_lock;
 				num_lock_prev = num_lock;
