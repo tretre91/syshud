@@ -216,69 +216,58 @@ void syshud::on_change(const char& reason, const int& value) {
 	if (std::stoi(config_main["main"]["icon-size"]) == 0)
 		return;
 
-	// Map
-	std::map<int, std::string> value_levels = {
-		{0, "muted"},
-		{1, "low"},
-		{2, "medium"},
-		{3, "high"},
-	};
+        static const std::unordered_map<char, std::vector<std::string>> icons{
+#ifdef FEATURE_BACKLIGHT
+            {'b',
+             {
+	      "display-brightness-off-symbolic",
+              "display-brightness-low-symbolic",
+              "display-brightness-medium-symbolic",
+              "display-brightness-high-symbolic"}},
+#endif
+            {'i',
+             {"audio-input-microphone-muted-symbolic",
+              "audio-input-microphone-low-symbolic",
+              "audio-input-microphone-medium-symbolic",
+              "audio-input-microphone-high-symbolic"}},
+
+            {'o',
+             {"audio-volume-muted-symbolic",
+	      "audio-volume-low-symbolic",
+              "audio-volume-medium-symbolic",
+	      "audio-volume-high-symbolic",
+              "audio-volume-overamplified-symbolic"}}};
 
 	std::string label;
-
-	// Audio input
-	if (reason == 'i') {
-		if (muted)
-			icon = "audio-input-microphone-muted-symbolic";
-		else if (value <= 100)
-			icon = "audio-input-microphone-" + value_levels[value / 34 + 1] + "-symbolic";
-	}
-
-	// Audio output
-	else if (reason == 'o') {
-		if (muted)
-			icon = "audio-volume-muted-symbolic";
-		else if (value <= 100)
-			icon = "audio-volume-" + value_levels[value / 34 + 1] + "-symbolic";
-		else
-			icon = "audio-volume-overamplified-symbolic";
-	}
-
-	#ifdef FEATURE_BACKLIGHT
-	else if (reason == 'b') {
-		if (value == 0)
-			icon = "display-brightness-off-symbolic";
-		else
-			icon = "display-brightness-" + value_levels[value / 34 + 1] + "-symbolic";
-	}
-	#endif
-
-	#ifdef FEATURE_KEYBOARD
-	else if (reason == 'k') {
-		if (value == 'c') {
-			label = "Caps Lock";
-			icon = listener_keytoggles->caps_lock ? "capslock-enabled-symbolic" : "capslock-disabled-symbolic";
-		}
-		else if (value == 'n') {
-			label = "Num Lock";
-			icon = listener_keytoggles->caps_lock ? "numlock-enabled-symbolic" : "numlock-disabled-symbolic";
-		}
-	}
-	#endif
-
 	if (reason != 'k') {
+		static const std::array<std::string, 4> classes {"muted", "low", "medium", "high"};
+
+		box_layout.get_style_context()->remove_class(previous_class);
+
+		const std::vector<std::string>& icon_names = icons.at(reason);
+		const int idx = muted ? 0 : (value + 32 - (value == 100)) / 33;
+		if (idx < classes.size()) {
+			icon = icon_names[idx];
+			previous_class = classes[idx];
+		} else {
+			icon = icon_names.back();
+			previous_class = classes.back();
+		}
+
 		label = std::to_string(value) + "\%";
 
-		// Set appropiate class
-		box_layout.get_style_context()->remove_class(previous_class);
-	
-		if (muted && reason !=  'b')
-			previous_class = value_levels[0];
-		else
-			previous_class = value_levels[std::clamp(value, 0, 100) / 34 + 1];
-	
 		box_layout.get_style_context()->add_class(previous_class);
 	}
+	#ifdef FEATURE_KEYBOARD
+	else if (value == 'c') {
+		label = "Caps Lock";
+		icon = listener_keytoggles->caps_lock ? "capslock-enabled-symbolic" : "capslock-disabled-symbolic";
+	}
+	else if (value == 'n') {
+		label = "Num Lock";
+		icon = listener_keytoggles->num_lock ? "numlock-enabled-symbolic" : "numlock-disabled-symbolic";
+	}
+	#endif
 
 	// Show data
 	check_icon();
