@@ -216,27 +216,26 @@ void syshud::on_change(const char& reason, const int& value) {
 	if (std::stoi(config_main["main"]["icon-size"]) == 0)
 		return;
 
-        static const std::unordered_map<char, std::vector<std::string>> icons{
+	static const std::unordered_map<char, std::vector<std::string>> icons{
 #ifdef FEATURE_BACKLIGHT
-            {'b',
-             {
-	      "display-brightness-off-symbolic",
-              "display-brightness-low-symbolic",
-              "display-brightness-medium-symbolic",
-              "display-brightness-high-symbolic"}},
+	    {'b',
+	     {ICON_BRIGHTNESS_OFF,
+	      ICON_BRIGHTNESS_LOW,
+	      ICON_BRIGHTNESS_MEDIUM,
+	      ICON_BRIGHTNESS_HIGH}},
 #endif
-            {'i',
-             {"audio-input-microphone-muted-symbolic",
-              "audio-input-microphone-low-symbolic",
-              "audio-input-microphone-medium-symbolic",
-              "audio-input-microphone-high-symbolic"}},
+	    {'i',
+	     {ICON_MIC_MUTED,
+	      ICON_MIC_LOW,
+	      ICON_MIC_MEDIUM,
+	      ICON_MIC_HIGH}},
 
-            {'o',
-             {"audio-volume-muted-symbolic",
-	      "audio-volume-low-symbolic",
-              "audio-volume-medium-symbolic",
-	      "audio-volume-high-symbolic",
-              "audio-volume-overamplified-symbolic"}}};
+	    {'o',
+	     {ICON_SPEAKER_MUTED,
+	      ICON_SPEAKER_LOW,
+	      ICON_SPEAKER_MEDIUM,
+	      ICON_SPEAKER_HIGH,
+	      ICON_SPEAKER_OVERAMPLIFIED}}};
 
 	std::string label;
 	if (reason != 'k') {
@@ -261,11 +260,11 @@ void syshud::on_change(const char& reason, const int& value) {
 	#ifdef FEATURE_KEYBOARD
 	else if (value == 'c') {
 		label = "Caps Lock";
-		icon = listener_keytoggles->caps_lock ? "capslock-enabled-symbolic" : "capslock-disabled-symbolic";
+		icon = listener_keytoggles->caps_lock ? ICON_CAPS_LOCK_ON : ICON_CAPS_LOCK_OFF;
 	}
 	else if (value == 'n') {
 		label = "Num Lock";
-		icon = listener_keytoggles->num_lock ? "numlock-enabled-symbolic" : "numlock-disabled-symbolic";
+		icon = listener_keytoggles->num_lock ? ICON_NUM_LOCK_ON : ICON_NUM_LOCK_OFF;
 	}
 	#endif
 
