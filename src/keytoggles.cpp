@@ -2,6 +2,7 @@
 
 #include <iostream>
 #include <fcntl.h>
+#include <poll.h>
 #include <unistd.h>
 #include <thread>
 #include <libevdev/libevdev.h>
@@ -30,13 +31,19 @@ syshud_keytoggles::syshud_keytoggles(Glib::Dispatcher* callback, const std::stri
 			caps_lock_prev = libevdev_get_event_value(dev, EV_LED, LED_CAPSL);
 			num_lock_prev = libevdev_get_event_value(dev, EV_LED, LED_NUML);
 
+			pollfd pfd = {fd, POLLIN};
+
 			// Main event loop
 			while (true) {
 				struct input_event ev;
 				int rc = libevdev_next_event(dev, LIBEVDEV_READ_FLAG_NORMAL, &ev);
 
 				if (rc == -EAGAIN) {
-					std::this_thread::sleep_for(std::chrono::milliseconds(100));
+					// Wait for new events to be available
+					do {
+						rc = poll(&pfd, 1, -1);
+					} while (rc == 0 || pfd.revents != POLLIN);
+
 					continue;
 				}
 
