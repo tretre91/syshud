@@ -261,12 +261,22 @@ void syshud::on_change(const char& reason, const int& value) {
 	}
 	#ifdef FEATURE_KEYBOARD
 	else if (value == 'c') {
-		label = "Caps Lock";
-		icon = listener_keytoggles->caps_lock ? ICON_CAPS_LOCK_ON : ICON_CAPS_LOCK_OFF;
+		if (listener_keytoggles->caps_lock) {
+			label = "Caps Lock on";
+			icon = ICON_CAPS_LOCK_ON;
+		} else {
+			label = "Caps Lock off";
+			icon = ICON_CAPS_LOCK_OFF;
+		}
 	}
 	else if (value == 'n') {
-		label = "Num Lock";
-		icon = listener_keytoggles->num_lock ? ICON_NUM_LOCK_ON : ICON_NUM_LOCK_OFF;
+		if (listener_keytoggles->num_lock) {
+			label = "Num Lock on";
+			icon = ICON_NUM_LOCK_ON;
+		} else {
+			label = "Num Lock off";
+			icon = ICON_NUM_LOCK_OFF;
+		}
 	}
 	#endif
 
