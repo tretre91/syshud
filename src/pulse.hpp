@@ -21,8 +21,10 @@ class syshud_pulseaudio {
 		std::string last_input_name;
 		std::string last_output_name;
 
-		int previous_volume;
-		bool previous_muted;
+		int last_input_volume = -1;
+		int last_output_volume = -1;
+		bool last_input_muted;
+		bool last_output_muted;
 		Glib::Dispatcher* input_callback;
 		Glib::Dispatcher* output_callback;
 

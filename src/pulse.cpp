@@ -105,16 +105,21 @@ void syshud_pulseaudio::sink_info_callback(pa_context *c, const pa_sink_info *i,
 	// 	return;
 
 	// Set new values
-	pa->volume = roundf(((float)pa_cvolume_avg(&(i->volume)) / (float)PA_VOLUME_NORM) * 100.0f);
-	pa->muted = i->mute;
+	const int volume = roundf(((float)pa_cvolume_avg(&(i->volume)) / (float)PA_VOLUME_NORM) * 100.0f);
+	const bool muted = i->mute;
 
 	// Trigger an update if needed
-	if (pa->last_output_name != i->name || pa->volume != pa->previous_volume || pa->muted != pa->previous_muted) {
-		pa->output_callback->emit();
+	if (pa->last_output_name != i->name || (volume != pa->last_output_volume && !muted) || muted != pa->last_output_muted) {
+		// previous_output_volume is -1 when this is called just after initialization
+		if (pa->last_output_volume >= 0) {
+			pa->muted = muted;
+			pa->volume = volume;
+			pa->output_callback->emit();
+		}
 
 		pa->last_output_name = i->name;
-		pa->previous_volume = pa->volume;
-		pa->previous_muted = pa->muted;
+		pa->last_output_volume = volume;
+		pa->last_output_muted = muted;
 	}
 }
 
@@ -125,16 +130,22 @@ void syshud_pulseaudio::source_info_callback(pa_context *c, const pa_source_info
 		return;
 
 	// Set new values
-	pa->volume = roundf(((float)pa_cvolume_avg(&(i->volume)) / (float)PA_VOLUME_NORM) * 100.0f);
-	pa->muted = i->mute;
-
+	const int volume = roundf(((float)pa_cvolume_avg(&(i->volume)) / (float)PA_VOLUME_NORM) * 100.0f);
+	const bool muted = i->mute;
+	
 	// Trigger an update if needed
-	if (pa->last_input_name != i->name || pa->volume != pa->previous_volume || pa->muted != pa->previous_muted) {
-		pa->input_callback->emit();
+	// TODO: remove the pa->last_input_name != i->name condition as it is trigger too often
+	if (pa->last_input_name != i->name || (volume != pa->last_input_volume && !muted) || muted != pa->last_input_muted) {
+		// previous_volume is -1 when this is called just after initialization
+		if (pa->last_input_volume >= 0) {
+			pa->muted = muted;
+			pa->volume = volume;
+			pa->input_callback->emit();
+		}
 
 		pa->last_input_name = i->name;
-		pa->previous_volume = pa->volume;
-		pa->previous_muted = pa->muted;
+		pa->last_input_volume = volume;
+		pa->last_input_muted = muted;
 	}
 }
 
