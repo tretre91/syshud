@@ -60,6 +60,7 @@ class syshud : public Gtk::Window {
 		Gtk::Image image_volume;
 		Gtk::Scale scale_volume;
 		Gtk::Label label_volume;
+		Gtk::Box padding;
 		Gtk::Revealer revealer_box;
 		Gtk::RevealerTransitionType transition_type;
 		Glib::RefPtr<Gtk::IconTheme> icon_theme;

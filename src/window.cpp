@@ -52,10 +52,13 @@ syshud::syshud(const std::map<std::string, std::map<std::string, std::string>>& 
 		box_layout.append(scale_volume);
 
 		// Check to see if the percentage should be shown
-		#ifndef FEATURE_KEYBOARD
-		if (config_main["main"]["show-percentage"] == "true")
-		#endif
+		#ifdef FEATURE_KEYBOARD
 		box_layout.append(label_volume);
+		box_layout.append(padding);
+		#else
+		if (config_main["main"]["show-percentage"] == "true")
+			box_layout.append(label_volume);
+		#endif
 
 		scale_volume.set_hexpand(true);
 		scale_volume.set_value_pos(Gtk::PositionType::RIGHT);
@@ -147,8 +150,10 @@ syshud::syshud(const std::map<std::string, std::map<std::string, std::string>>& 
 	scale_volume.signal_change_value().connect(sigc::mem_fun(*this, &syshud::on_scale_change), true);
 
 	if (std::stoi(config_main["main"]["icon-size"]) != 0) {
+		const int height = std::stoi(config_main["main"]["height"]);
 		image_volume.set_pixel_size(std::stoi(config_main["main"]["icon-size"]));
-		image_volume.set_size_request(std::stoi(config_main["main"]["height"]), std::stoi(config_main["main"]["height"]));
+		image_volume.set_size_request(height, height);
+		padding.set_size_request(height, height);
 	}
 
 	if (config_main["main"]["show-percentage"] == "true")
@@ -160,6 +165,13 @@ syshud::syshud(const std::map<std::string, std::map<std::string, std::string>>& 
 	#ifdef FEATURE_BACKLIGHT
 	dispatcher_backlight.connect([&]() {
 		scale_volume.show();
+		padding.hide();
+		if (config_main["main"]["show-percentage"] == "true") {
+			label_volume.set_hexpand(false);
+			label_volume.show();
+		} else {
+			label_volume.hide();
+		}
 		on_change('b', listener_backlight->get_brightness());
 	});
 	#endif
@@ -167,6 +179,10 @@ syshud::syshud(const std::map<std::string, std::map<std::string, std::string>>& 
 	#ifdef FEATURE_KEYBOARD
 	dispatcher_keytoggles.connect([&]() {
 		scale_volume.hide();
+		padding.show();
+		label_volume.show();
+		label_volume.set_hexpand(true);
+		label_volume.set_halign(Gtk::Align::CENTER);
 		on_change('k', listener_keytoggles->changed);
 	});
 	#endif
@@ -281,12 +297,7 @@ void syshud::on_change(const char& reason, const int& value) {
 	image_volume.set_from_icon_name(icon);
 	scale_animator.animate_property(&scale_volume,
 		PROPERTY_SCALE_VALUE, value, 0.25);
-	if (reason == 'k' || config_main["main"]["show-percentage"] == "true") {
-		label_volume.set_label(label);
-		label_volume.show();
-	} else {
-		label_volume.hide();
-	}
+	label_volume.set_label(label);
 }
 
 bool syshud::on_scale_change(const Gtk::ScrollType&, const double& val) {
@@ -312,6 +323,14 @@ void syshud::on_audio_callback(const bool& input) {
 	muted = listener_audio->muted;
 
 	scale_volume.show();
+	padding.hide();
+	if (config_main["main"]["show-percentage"] == "true") {
+		label_volume.set_hexpand(false);
+		label_volume.show();
+	} else {
+		label_volume.hide();
+	}
+
 	if (input)
 		on_change('i', volume);
 	else
