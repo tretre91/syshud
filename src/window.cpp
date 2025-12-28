@@ -108,6 +108,7 @@ syshud::syshud(const std::map<std::string, std::map<std::string, std::string>>& 
 		std::fprintf(stderr, "Unknown orientation: %s\n", config_main["main"]["orientation"].c_str());
 		return;
 	}
+	scale_volume.set_sensitive(false);
 
 	if (config_main["main"]["animation-fade"] == "true") {
 		transition_type = Gtk::RevealerTransitionType::CROSSFADE;
